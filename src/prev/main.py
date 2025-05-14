@@ -120,6 +120,13 @@ class PREVUI:
             type=int,
             help="Specify the number of parallel processes.",
         )
+        tokenize_parser.add_argument(
+            "--newline-break",
+            dest="newline_break",
+            choices=["never", "always", "two"],
+            default="never",
+            help="",
+        )
         self.__add_log_levels(tokenize_parser)
         tokenize_parser.set_defaults(func=self.parse_tokenize_args, cls=Tokenize_Runner)
         return tokenize_parser
@@ -132,7 +139,7 @@ class PREVUI:
             dest="pattern_file",
             default=None,
             help=(
-                "Specify file path of the config .py file where you can customize dependency"
+                "Specify file path of the config.py file where you can customize dependency"
                 ' patterns to search. A non-empty "pattern" variable assigning to a list in the'
                 " config file will override the default dependency patterns."
             ),
@@ -216,6 +223,13 @@ class PREVUI:
             type=int,
             help="Specify the number of parallel processes.",
         )
+        depmatch_parser.add_argument(
+            "--newline-break",
+            dest="newline_break",
+            choices=["never", "always", "two"],
+            default="never",
+            help="",
+        )
         self.__add_log_levels(depmatch_parser)
         depmatch_parser.set_defaults(func=self.parse_depmatch_args, cls=Depmatch_Runner)
         return depmatch_parser
@@ -247,6 +261,7 @@ class PREVUI:
             "is_stdout": options.is_stdout,
             "is_pretokenized": options.is_pretokenized,
             "n_process": options.n_process,
+            "newline_break": options.newline_break,
         }
         self.options = options
         return True, None
@@ -282,6 +297,7 @@ class PREVUI:
             "print_what": options.print_what,
             "n_process": options.n_process,
             "pattern_file": options.pattern_file,
+            "newline_break": options.newline_break,
         }
         self.options = options
         return True, None

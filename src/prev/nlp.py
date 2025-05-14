@@ -11,7 +11,7 @@ class NLP_Spacy:
     is_initialized: bool = False
 
     @classmethod
-    def initialize(cls, model: str = "en_core_web_sm", exclude: Optional[list[str]] = None) -> None:
+    def initialize(cls, model: str = "en_core_web_trf", exclude: Optional[list[str]] = None) -> None:
         logging.debug("Initializing spaCy...")
         import spacy
 
@@ -56,7 +56,7 @@ class NLP_Spacy:
     @classmethod
     def _spacy2json(cls, doc_spacy, json_path: str):
         with open(json_path, "w") as f:
-            f.write(json.dumps(doc_spacy.to_json()))
+            json.dump(doc_spacy.to_json(), f, ensure_ascii=False)
 
     @classmethod
     def _depparse(
@@ -72,8 +72,6 @@ class NLP_Spacy:
                 logging.info("Dependency parsing raw text...")
                 doc_spacy = cls._nlp(text)
             else:
-                from spacy.tokens import Doc as Doc_spacy
-
                 doc_spacy = cls._pretokenized2doc(text)
                 logging.info("Dependency parsing pretokenized text...")
                 doc_spacy = cls._nlp(doc_spacy)

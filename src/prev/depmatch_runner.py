@@ -4,7 +4,7 @@ import logging
 import os
 import os.path as os_path
 import sys
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from .nlp import NLP_Spacy
 from .querier import Querier
@@ -22,6 +22,7 @@ class Depmatch_Runner:
         print_what: str,
         n_process: int = 3,
         pattern_file: Optional[str] = None,
+        newline_break: Literal["never", "always", "two"] = "never",
     ) -> None:
         self.is_pretokenized = is_pretokenized
         self.is_refresh = is_refresh
@@ -29,6 +30,7 @@ class Depmatch_Runner:
         self.is_visualize = is_visualize
         self.is_stdout = is_stdout
         self.print_what = print_what
+        self.newline_break = newline_break
 
         self.querier = Querier(n_process, pattern_file)
 
@@ -53,9 +55,22 @@ class Depmatch_Runner:
                 f.write(svg)
 
     def run_on_text(self, text: str, ifile="cmdline_text", ofile=None) -> Prev_Procedure_Result:
-        doc_spacy = NLP_Spacy.depparse(
+        match self.newline_break:
+            case "never":
+                doc_spacy = NLP_Spacy.depparse(
             text, ifile, is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh
         )
+            case "always":
+                from spacy.tokens import Doc
+                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh) for i, line in enumerate(text.split("\n"), 1) if line.strip()])
+            case "two":
+                import re
+
+                from spacy.tokens import Doc
+
+                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh) for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1) if para.strip()])
+            case _ as unknown:
+                raise ValueError(f"Unexpected newline_break value: {unknown}. Expect never, always, or two")
         if self.is_visualize:
             for sent in doc_spacy.sents:
                 self.draw_tree(sent, ifile)
@@ -68,9 +83,9 @@ class Depmatch_Runner:
             if not self.is_stdout:
                 if ofile is None:
                     ofile = f"cmdline_text.{self.print_what}"
-                    logging.info(f"Done. Results have been written in {ofile}.")
                 with open(ofile, "w", encoding="utf-8") as f:
                     f.write(result)
+                logging.info(f"Written to {ofile}.")
             else:
                 sys.stdout.write(result)
         return True, None
@@ -93,7 +108,7 @@ class Depmatch_Runner:
             self.run_on_file(ifile)
             i += 1
 
-        logging.info("Done. Results have been saved as *.matched, under the same directory as input files.")
+        logging.info("Done.")
         return True, None
 
     def interact(self) -> Prev_Procedure_Result:

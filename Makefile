@@ -1,4 +1,4 @@
-.PHONY: refresh clean build release install test lint
+.PHONY: refresh clean build release install test lint sync
 
 refresh: lint clean build install
 
@@ -34,3 +34,9 @@ lint:
 	black src/prev/ tests/ --line-length 97 --preview
 	flake8 src/prev/ tests/ --count --statistics --ignore=E501,W503
 	# mypy --check-untyped-defs prev/
+
+sync:
+	# unlisted packages will be removed
+	uv pip sync ./requirements.txt
+	# install missing intermediate dependencies
+	uv pip install -r ./requirements.txt
