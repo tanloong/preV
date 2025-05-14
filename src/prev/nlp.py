@@ -60,24 +60,16 @@ class NLP_Spacy:
 
     @classmethod
     def _depparse(
-        cls, text: str, ifile_prefix: str, *, is_pretokenized: bool = False, is_refresh: bool = False
+        cls, text: str, ifile_prefix: str, *, is_pretokenized: bool = False
     ):
-        ofile_depparsed = ifile_prefix + "_depparsed.json"
-        if not is_refresh and os_path.exists(ofile_depparsed):
-            logging.info(f"{ofile_depparsed} already exists. Dependency parsing skipped.")
-
-            doc_spacy = cls._json2spacy(ofile_depparsed)
+        if not is_pretokenized:
+            logging.info("Dependency parsing raw text...")
+            doc_spacy = cls._nlp(text)
         else:
-            if not is_pretokenized:
-                logging.info("Dependency parsing raw text...")
-                doc_spacy = cls._nlp(text)
-            else:
-                doc_spacy = cls._pretokenized2doc(text)
-                logging.info("Dependency parsing pretokenized text...")
-                doc_spacy = cls._nlp(doc_spacy)
+            doc_spacy = cls._pretokenized2doc(text)
+            logging.info("Dependency parsing pretokenized text...")
+            doc_spacy = cls._nlp(doc_spacy)
 
-            logging.info(f"Saving the intermediate file to {ofile_depparsed}.")
-            cls._spacy2json(doc_spacy, ofile_depparsed)
         return doc_spacy
 
     @classmethod
@@ -86,7 +78,6 @@ class NLP_Spacy:
         text: Optional[str] = None,
         ifile: Optional[str] = None,
         is_pretokenized: bool = False,
-        is_refresh: bool = False,
     ):
         assert any((text, ifile)), "Neither text nor ifile is valid."
         if ifile is None:
@@ -98,38 +89,26 @@ class NLP_Spacy:
         logging.info(f"Processing {ifile}...")
 
         ifile_prefix = os_path.splitext(ifile)[0]
-        doc_spacy = cls._depparse(text, ifile_prefix, is_pretokenized=is_pretokenized, is_refresh=is_refresh)  # type:ignore
+        doc_spacy = cls._depparse(text, ifile_prefix, is_pretokenized=is_pretokenized)  # type:ignore
         return doc_spacy
 
     @classmethod
     def _tokenize(
-        cls, text: str, ifile_prefix: str, *, is_pretokenized: bool = False, is_refresh: bool = False
+        cls, text: str, *, is_pretokenized: bool = False
     ):
         disable = ["ner"]
-        ofile_tokenized = ifile_prefix + "_tok.json"
-        if not is_refresh and os_path.exists(ofile_tokenized):
-            # TODO: this msg sucks. Need to notify users that a. tokenization
-            # is skipped b. because cache exists c. the result will be
-            # determined by the cache
-            logging.info(f"{ofile_tokenized} already exists. Tokenization skipped.")
-
-            doc_spacy = cls._json2spacy(ofile_tokenized)
+        if not is_pretokenized:
+            logging.info("Tokenizing raw text...")
+            doc_spacy = cls._nlp(text, disable=disable)
         else:
-            if not is_pretokenized:
-                logging.info("Tokenizing raw text...")
-                doc_spacy = cls._nlp(text, disable=disable)
-            else:
-                from spacy.tokens import Doc as Doc_spacy
+            from spacy.tokens import Doc as Doc_spacy
 
-                list_of_words: tuple[list[str], ...] = tuple(line.split() for line in text.split("\n"))
-                flatten_words: list[str] = list(_chain.from_iterable(list_of_words))
-                sent_starts: list[bool] = [i == 0 for words in list_of_words for i in range(len(words))]
-                doc_spacy = Doc_spacy(cls.nlp_spacy.vocab, words=flatten_words, sent_starts=sent_starts)
-                logging.info("Tokenizing pretokenized text (that's funny)...")
-                doc_spacy = cls._nlp(doc_spacy, disable=disable)
-
-            logging.info(f"Saving the intermediate file to {ofile_tokenized}.")
-            cls._spacy2json(doc_spacy, ofile_tokenized)
+            list_of_words: tuple[list[str], ...] = tuple(line.split() for line in text.split("\n"))
+            flatten_words: list[str] = list(_chain.from_iterable(list_of_words))
+            sent_starts: list[bool] = [i == 0 for words in list_of_words for i in range(len(words))]
+            doc_spacy = Doc_spacy(cls.nlp_spacy.vocab, words=flatten_words, sent_starts=sent_starts)
+            logging.info("Tokenizing pretokenized text (that's funny)...")
+            doc_spacy = cls._nlp(doc_spacy, disable=disable)
         return doc_spacy
 
     @classmethod
@@ -138,7 +117,6 @@ class NLP_Spacy:
         text: Optional[str] = None,
         ifile: Optional[str] = None,
         is_pretokenized: bool = False,
-        is_refresh: bool = False,
     ):
         assert any((text, ifile)), "Neither text nor ifile is valid."
 
@@ -150,6 +128,5 @@ class NLP_Spacy:
 
         logging.info(f"Processing {ifile}...")
 
-        ifile_prefix = os_path.splitext(ifile)[0]
-        doc_spacy = cls._tokenize(text, ifile_prefix, is_pretokenized=is_pretokenized, is_refresh=is_refresh)  # type:ignore
+        doc_spacy = cls._tokenize(text, is_pretokenized=is_pretokenized)  # type:ignore
         return doc_spacy

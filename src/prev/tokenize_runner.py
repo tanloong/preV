@@ -12,13 +12,11 @@ from .util import Prev_Procedure_Result
 class Tokenize_Runner:
     def __init__(
         self,
-        is_refresh: bool,
         is_stdout: bool,
         is_pretokenized: bool,
         n_process: int = 3,
         newline_break: Literal["never", "always", "two"] = "never",
     ) -> None:
-        self.is_refresh = is_refresh
         self.is_stdout = is_stdout
         self.is_pretokenized = is_pretokenized
         self.newline_break = newline_break
@@ -40,20 +38,20 @@ class Tokenize_Runner:
         match self.newline_break:
             case "never":
                 result: str = (
-            "\n".join(" ".join(w.text for w in sent) for sent in NLP_Spacy.tokenize(text, ifile, is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh).sents if sent.text.strip()) + "\n"
+            "\n".join(" ".join(w.text for w in sent) for sent in NLP_Spacy.tokenize(text, ifile, is_pretokenized=self.is_pretokenized).sents if sent.text.strip()) + "\n"
         )
             case "always":
                 result = "\n".join(
             " ".join(w.text for w in sent)
             for i, line in enumerate(text.split("\n"), 1) if line.strip()
-            for sent in NLP_Spacy.tokenize(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh).sents
+            for sent in NLP_Spacy.tokenize(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized).sents
         ) + "\n"
             case "two":
                 import re
                 result = "\n".join(
             " ".join(w.text for w in sent)
             for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1) if para.strip()
-            for sent in NLP_Spacy.tokenize(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh).sents
+            for sent in NLP_Spacy.tokenize(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized).sents
         ) + "\n"
             case _ as unknown:
                 raise ValueError(f"Unexpected newline_break value: {unknown}. Expect never, always, or two")

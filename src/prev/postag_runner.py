@@ -12,12 +12,10 @@ from .util import Prev_Procedure_Result
 class PosTag_Runner:
     def __init__(
         self,
-        is_refresh: bool,
         is_stdout: bool,
         is_pretokenized: bool,
         n_process: int = 3,
     ) -> None:
-        self.is_refresh = is_refresh
         self.is_stdout = is_stdout
         self.is_pretokenized = is_pretokenized
 

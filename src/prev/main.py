@@ -73,13 +73,6 @@ class PREVUI:
             help="Specify a file containing a list of input filenames.",
         )
         tokenize_parser.add_argument(
-            "--refresh",
-            dest="is_refresh",
-            action="store_true",
-            default=False,
-            help="Don't use cache files even if they exist. (*.json).",
-        )
-        tokenize_parser.add_argument(
             "--text",
             "-t",
             default=None,
@@ -156,13 +149,6 @@ class PREVUI:
             action="store_true",
             default=False,
             help="Visualize parse trees.",
-        )
-        depmatch_parser.add_argument(
-            "--refresh",
-            dest="is_refresh",
-            action="store_true",
-            default=False,
-            help="Don't use cache files even if they exist. (*.json).",
         )
         depmatch_parser.add_argument(
             "--no-query",
@@ -253,11 +239,8 @@ class PREVUI:
                     return (False, f"No such file as \n\n{f}")
             if verified_ifiles:
                 self.verified_ifiles = verified_ifiles
-        else:
-            options.is_refresh = True
 
         self.init_kwargs = {
-            "is_refresh": options.is_refresh,
             "is_stdout": options.is_stdout,
             "is_pretokenized": options.is_pretokenized,
             "n_process": options.n_process,
@@ -285,11 +268,8 @@ class PREVUI:
                     return (False, f"No such file as \n\n{f}")
             if verified_ifiles:
                 self.verified_ifiles = verified_ifiles
-        else:
-            options.is_refresh = True
 
         self.init_kwargs = {
-            "is_refresh": options.is_refresh,
             "is_no_query": options.is_no_query,
             "is_visualize": options.is_visualize,
             "is_stdout": options.is_stdout,
@@ -306,7 +286,6 @@ class PREVUI:
         options, ifile_list = self.args_parser.parse_known_args(argv[1:])
         if getattr(options, "is_interact", False):
             options.is_stdout = True
-            options.is_refresh = True
             if not options.is_verbose:
                 # Be quiet unless user asks to be verbose
                 options.is_quiet = True

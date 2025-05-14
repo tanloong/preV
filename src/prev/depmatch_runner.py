@@ -15,7 +15,6 @@ class Depmatch_Runner:
     def __init__(
         self,
         is_pretokenized: bool,
-        is_refresh: bool,
         is_no_query: bool,
         is_visualize: bool,
         is_stdout: bool,
@@ -25,7 +24,6 @@ class Depmatch_Runner:
         newline_break: Literal["never", "always", "two"] = "never",
     ) -> None:
         self.is_pretokenized = is_pretokenized
-        self.is_refresh = is_refresh
         self.is_no_query = is_no_query
         self.is_visualize = is_visualize
         self.is_stdout = is_stdout
@@ -44,31 +42,28 @@ class Depmatch_Runner:
             + "-".join([w.text for w in sent_spacy if (w.is_alpha or w.is_digit)])[:100]
             + ".svg"
         )
-        if os_path.exists(svg_file) and not self.is_refresh:
-            logging.info(f"{svg_file} already exists. Visualizing skipped.")
-        else:
-            logging.info(f"Visualizing: {sent_spacy.text}")
-            svg = displacy.render(sent_spacy)
-            if not os_path.exists(trees_dir):
-                os.makedirs(trees_dir)
-            with open(svg_file, "w", encoding="utf-8") as f:
-                f.write(svg)
+        logging.info(f"Visualizing: {sent_spacy.text}")
+        svg = displacy.render(sent_spacy)
+        if not os_path.exists(trees_dir):
+            os.makedirs(trees_dir)
+        with open(svg_file, "w", encoding="utf-8") as f:
+            f.write(svg)
 
     def run_on_text(self, text: str, ifile="cmdline_text", ofile=None) -> Prev_Procedure_Result:
         match self.newline_break:
             case "never":
                 doc_spacy = NLP_Spacy.depparse(
-            text, ifile, is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh
+            text, ifile, is_pretokenized=self.is_pretokenized
         )
             case "always":
                 from spacy.tokens import Doc
-                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh) for i, line in enumerate(text.split("\n"), 1) if line.strip()])
+                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized) for i, line in enumerate(text.split("\n"), 1) if line.strip()])
             case "two":
                 import re
 
                 from spacy.tokens import Doc
 
-                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized, is_refresh=self.is_refresh) for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1) if para.strip()])
+                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized) for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1) if para.strip()])
             case _ as unknown:
                 raise ValueError(f"Unexpected newline_break value: {unknown}. Expect never, always, or two")
         if self.is_visualize:
