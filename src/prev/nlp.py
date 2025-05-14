@@ -11,7 +11,7 @@ class NLP_Spacy:
     is_initialized: bool = False
 
     @classmethod
-    def initialize(cls, model: str = "en_core_web_trf", exclude: Optional[list[str]] = None) -> None:
+    def initialize(cls, model: str = "en_core_web_sm", exclude: Optional[list[str]] = None) -> None:
         logging.debug("Initializing spaCy...")
         import spacy
 
@@ -27,6 +27,18 @@ class NLP_Spacy:
 
         kwargs = {"disable": disable} if disable is not None else {}
         return cls.nlp_spacy(doc, **kwargs)
+
+    @classmethod
+    def _pretokenized2doc(cls, text: str):
+        if not cls.is_initialized:
+            cls.initialize()
+
+        from spacy.tokens import Doc as Doc_spacy
+
+        list_of_words: tuple[list[str], ...] = tuple(line.split() for line in text.split("\n"))
+        flatten_words: list[str] = list(_chain.from_iterable(list_of_words))
+        sent_starts: list[bool] = [i == 0 for words in list_of_words for i in range(len(words))]
+        return Doc_spacy(cls.nlp_spacy.vocab, words=flatten_words, sent_starts=sent_starts)
 
     @classmethod
     def _json2spacy(cls, json_path: str):
@@ -62,10 +74,7 @@ class NLP_Spacy:
             else:
                 from spacy.tokens import Doc as Doc_spacy
 
-                list_of_words: tuple[list[str], ...] = tuple(line.split() for line in text.split("\n"))
-                flatten_words: list[str] = list(_chain.from_iterable(list_of_words))
-                sent_starts: list[bool] = [i == 0 for words in list_of_words for i in range(len(words))]
-                doc_spacy = Doc_spacy(cls.nlp_spacy.vocab, words=flatten_words, sent_starts=sent_starts)
+                doc_spacy = cls._pretokenized2doc(text)
                 logging.info("Dependency parsing pretokenized text...")
                 doc_spacy = cls._nlp(doc_spacy)
 
