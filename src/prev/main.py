@@ -21,10 +21,11 @@ import os
 import sys
 from typing import List
 
-from .about import __version__
-from .depmatch_runner import Depmatch_Runner
-from .tokenize_runner import Tokenize_Runner
-from .util import Prev_Procedure_Result
+from .consts import __version__
+from .depmatch_runner import DepmatchRunner
+from .repl import PrevInteractiveConsole
+from .tokenize_runner import TokenizeRunner
+from .util import PrevProcedureResult
 
 
 class PREVUI:
@@ -121,7 +122,7 @@ class PREVUI:
             help="",
         )
         self.__add_log_levels(tokenize_parser)
-        tokenize_parser.set_defaults(func=self.parse_tokenize_args, cls=Tokenize_Runner)
+        tokenize_parser.set_defaults(func=self.parse_tokenize_args, cls=TokenizeRunner)
         return tokenize_parser
 
     def create_depmatch_parser(self, subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
@@ -217,10 +218,10 @@ class PREVUI:
             help="",
         )
         self.__add_log_levels(depmatch_parser)
-        depmatch_parser.set_defaults(func=self.parse_depmatch_args, cls=Depmatch_Runner)
+        depmatch_parser.set_defaults(func=self.parse_depmatch_args, cls=DepmatchRunner)
         return depmatch_parser
 
-    def parse_tokenize_args(self, options: argparse.Namespace, ifiles: list[str]) -> Prev_Procedure_Result:
+    def parse_tokenize_args(self, options: argparse.Namespace, ifiles: list[str]) -> PrevProcedureResult:
         logging.debug("Parsing 'tokenize' options...")
         if options.input_file is not None:
             if not os.path.exists(options.input_file):
@@ -249,7 +250,7 @@ class PREVUI:
         self.options = options
         return True, None
 
-    def parse_depmatch_args(self, options: argparse.Namespace, ifiles: list[str]) -> Prev_Procedure_Result:
+    def parse_depmatch_args(self, options: argparse.Namespace, ifiles: list[str]) -> PrevProcedureResult:
         logging.debug("Parsing 'depmatch' options...")
         if options.input_file is not None:
             if not os.path.exists(options.input_file):
@@ -282,7 +283,7 @@ class PREVUI:
         self.options = options
         return True, None
 
-    def parse_args(self, argv: List[str]) -> Prev_Procedure_Result:
+    def parse_args(self, argv: List[str]) -> PrevProcedureResult:
         options, ifile_list = self.args_parser.parse_known_args(argv[1:])
         if getattr(options, "is_interact", False):
             options.is_stdout = True
@@ -290,9 +291,9 @@ class PREVUI:
                 # Be quiet unless user asks to be verbose
                 options.is_quiet = True
 
-        assert not (
-            options.is_quiet and options.is_verbose
-        ), "logging cannot be quiet and verbose at the same time"
+        assert not (options.is_quiet and options.is_verbose), (
+            "logging cannot be quiet and verbose at the same time"
+        )
 
         if options.is_quiet:
             logging.basicConfig(format="%(message)s", level=logging.WARNING)
@@ -307,7 +308,7 @@ class PREVUI:
         self.options = options
         return True, None
 
-    def run_on_input(self) -> Prev_Procedure_Result:
+    def run_on_input(self) -> PrevProcedureResult:
         runner = self.options.cls(**self.init_kwargs)
 
         if self.options.text is not None:
@@ -322,11 +323,13 @@ class PREVUI:
 
         return True, None
 
-    def run_interact(self) -> Prev_Procedure_Result:
+    def run_interact(self) -> PrevProcedureResult:
         runner = self.options.cls(**self.init_kwargs)
-        return runner.interact()
+        console = PrevInteractiveConsole(runner)
+        console.interact()
+        return True, None
 
-    def run(self) -> Prev_Procedure_Result:
+    def run(self) -> PrevProcedureResult:
         if self.options.version:
             return self.show_version()
         elif getattr(self.options, "is_interact", False):
@@ -343,7 +346,7 @@ class PREVUI:
                 self.args_parser.print_help()
             return True, None
 
-    def show_version(self) -> Prev_Procedure_Result:
+    def show_version(self) -> PrevProcedureResult:
         print(__version__)
         return True, None
 

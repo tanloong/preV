@@ -31,9 +31,9 @@ test:
 	python -m unittest
 
 lint:
-	black src/prev/ tests/ --line-length 97 --preview
-	flake8 src/prev/ tests/ --count --statistics --ignore=E501,W503
-	# mypy --check-untyped-defs prev/
+	ruff check src/ tests/ --fix
+	ruff format src/ tests/
+	ty check src/
 
 sync:
 	# unlisted packages will be removed

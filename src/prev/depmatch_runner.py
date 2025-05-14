@@ -6,12 +6,12 @@ import os.path as os_path
 import sys
 from typing import List, Literal, Optional
 
-from .nlp import NLP_Spacy
+from .nlp import NLPSpacy
 from .querier import Querier
-from .util import Prev_Procedure_Result
+from .util import PrevProcedureResult
 
 
-class Depmatch_Runner:
+class DepmatchRunner:
     def __init__(
         self,
         is_pretokenized: bool,
@@ -49,21 +49,32 @@ class Depmatch_Runner:
         with open(svg_file, "w", encoding="utf-8") as f:
             f.write(svg)
 
-    def run_on_text(self, text: str, ifile="cmdline_text", ofile=None) -> Prev_Procedure_Result:
+    def run_on_text(self, text: str, ifile="cmdline_text", ofile=None) -> PrevProcedureResult:
         match self.newline_break:
             case "never":
-                doc_spacy = NLP_Spacy.depparse(
-            text, ifile, is_pretokenized=self.is_pretokenized
-        )
+                doc_spacy = NLPSpacy.depparse(text, ifile, is_pretokenized=self.is_pretokenized)
             case "always":
                 from spacy.tokens import Doc
-                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized) for i, line in enumerate(text.split("\n"), 1) if line.strip()])
+
+                doc_spacy = Doc.from_docs(
+                    [
+                        NLPSpacy.depparse(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized)
+                        for i, line in enumerate(text.split("\n"), 1)
+                        if line.strip()
+                    ]
+                )
             case "two":
                 import re
 
                 from spacy.tokens import Doc
 
-                doc_spacy = Doc.from_docs([NLP_Spacy.depparse(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized) for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1) if para.strip()])
+                doc_spacy = Doc.from_docs(
+                    [
+                        NLPSpacy.depparse(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized)
+                        for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1)
+                        if para.strip()
+                    ]
+                )
             case _ as unknown:
                 raise ValueError(f"Unexpected newline_break value: {unknown}. Expect never, always, or two")
         if self.is_visualize:
@@ -85,7 +96,7 @@ class Depmatch_Runner:
                 sys.stdout.write(result)
         return True, None
 
-    def run_on_file(self, ifile: str) -> Prev_Procedure_Result:
+    def run_on_file(self, ifile: str) -> PrevProcedureResult:
         dir_name, file_name = os_path.split(ifile)
         name, _ = os_path.splitext(file_name)
         ofile = os_path.join(dir_name, name + f"_{self.print_what}.txt")
@@ -95,7 +106,7 @@ class Depmatch_Runner:
             text = f.read()
         return self.run_on_text(text, ifile, ofile)
 
-    def run_on_file_list(self, ifiles: List[str]) -> Prev_Procedure_Result:
+    def run_on_file_list(self, ifiles: List[str]) -> PrevProcedureResult:
         i = 1
         total = len(ifiles)
         for ifile in ifiles:
@@ -106,18 +117,6 @@ class Depmatch_Runner:
         logging.info("Done.")
         return True, None
 
-    def interact(self) -> Prev_Procedure_Result:
-        import readline
-
-        while True:
-            try:
-                text = input(">>> ")
-            except (KeyboardInterrupt, EOFError):
-                logging.warning("\npreV existing...")
-                break
-
-            if len(text) == 0:
-                logging.warning("Empty input!")
-            else:
-                self.run_on_text(text)
-        return True, None
+    def prepare_interact(self):
+        self.is_stdout = True
+        self.is_no_query = False

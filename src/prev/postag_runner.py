@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
-import logging
-import os.path as os_path
-import sys
-from typing import Callable, List
+from typing import List
 
-from .nlp import NLP_Spacy
-from .util import Prev_Procedure_Result
+from .util import PrevProcedureResult
 
 
-class PosTag_Runner:
+class PosTagRunner:
     def __init__(
         self,
         is_stdout: bool,
@@ -19,11 +15,11 @@ class PosTag_Runner:
         self.is_stdout = is_stdout
         self.is_pretokenized = is_pretokenized
 
-    def run_on_file(self, ifile: str) -> Prev_Procedure_Result:
+    def run_on_file(self, ifile: str) -> PrevProcedureResult:
         pass
 
-    def run_on_file_list(self, ifiles: List[str]) -> Prev_Procedure_Result:
+    def run_on_file_list(self, ifiles: List[str]) -> PrevProcedureResult:
         pass
 
-    def interact(self) -> Prev_Procedure_Result:
+    def interact(self) -> PrevProcedureResult:
         pass

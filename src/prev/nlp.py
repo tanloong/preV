@@ -7,7 +7,7 @@ from itertools import chain as _chain
 from typing import Optional
 
 
-class NLP_Spacy:
+class NLPSpacy:
     is_initialized: bool = False
 
     @classmethod
@@ -59,9 +59,7 @@ class NLP_Spacy:
             json.dump(doc_spacy.to_json(), f, ensure_ascii=False)
 
     @classmethod
-    def _depparse(
-        cls, text: str, ifile_prefix: str, *, is_pretokenized: bool = False
-    ):
+    def _depparse(cls, text: str, ifile_prefix: str, *, is_pretokenized: bool = False):
         if not is_pretokenized:
             logging.info("Dependency parsing raw text...")
             doc_spacy = cls._nlp(text)
@@ -93,9 +91,7 @@ class NLP_Spacy:
         return doc_spacy
 
     @classmethod
-    def _tokenize(
-        cls, text: str, *, is_pretokenized: bool = False
-    ):
+    def _tokenize(cls, text: str, *, is_pretokenized: bool = False):
         disable = ["ner"]
         if not is_pretokenized:
             logging.info("Tokenizing raw text...")

@@ -5,11 +5,11 @@ import os.path as os_path
 import sys
 from typing import Callable, List, Literal
 
-from .nlp import NLP_Spacy
-from .util import Prev_Procedure_Result
+from .nlp import NLPSpacy
+from .util import PrevProcedureResult
 
 
-class Tokenize_Runner:
+class TokenizeRunner:
     def __init__(
         self,
         is_stdout: bool,
@@ -34,28 +34,46 @@ class Tokenize_Runner:
 
         return wrapper
 
-    def run_on_text(self, text: str, ifile="cmdline_text", ofile=None) -> Prev_Procedure_Result:
+    def run_on_text(self, text: str, ifile="cmdline_text", ofile=None) -> PrevProcedureResult:
         match self.newline_break:
             case "never":
                 result: str = (
-            "\n".join(" ".join(w.text for w in sent) for sent in NLP_Spacy.tokenize(text, ifile, is_pretokenized=self.is_pretokenized).sents if sent.text.strip()) + "\n"
-        )
+                    "\n".join(
+                        " ".join(w.text for w in sent)
+                        for sent in NLPSpacy.tokenize(text, ifile, is_pretokenized=self.is_pretokenized).sents
+                        if sent.text.strip()
+                    )
+                    + "\n"
+                )
             case "always":
-                result = "\n".join(
-            " ".join(w.text for w in sent)
-            for i, line in enumerate(text.split("\n"), 1) if line.strip()
-            for sent in NLP_Spacy.tokenize(line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized).sents
-        ) + "\n"
+                result = (
+                    "\n".join(
+                        " ".join(w.text for w in sent)
+                        for i, line in enumerate(text.split("\n"), 1)
+                        if line.strip()
+                        for sent in NLPSpacy.tokenize(
+                            line, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized
+                        ).sents
+                    )
+                    + "\n"
+                )
             case "two":
                 import re
-                result = "\n".join(
-            " ".join(w.text for w in sent)
-            for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1) if para.strip()
-            for sent in NLP_Spacy.tokenize(para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized).sents
-        ) + "\n"
+
+                result = (
+                    "\n".join(
+                        " ".join(w.text for w in sent)
+                        for i, para in enumerate(re.split(r"(?:\r\n|\n|\r){2,}", text), 1)
+                        if para.strip()
+                        for sent in NLPSpacy.tokenize(
+                            para, f"{ifile}_{i}", is_pretokenized=self.is_pretokenized
+                        ).sents
+                    )
+                    + "\n"
+                )
             case _ as unknown:
                 raise ValueError(f"Unexpected newline_break value: {unknown}. Expect never, always, or two")
-                
+
         if not self.is_stdout:
             if ofile is None:
                 ofile = "cmdline_text.tok"
@@ -66,7 +84,7 @@ class Tokenize_Runner:
             sys.stdout.write(result)
         return True, None
 
-    def run_on_file(self, ifile: str) -> Prev_Procedure_Result:
+    def run_on_file(self, ifile: str) -> PrevProcedureResult:
         dir_name, file_name = os_path.split(ifile)
         name, _ = os_path.splitext(file_name)
         ofile = os_path.join(dir_name, name + "_tok.txt")
@@ -76,7 +94,7 @@ class Tokenize_Runner:
             text = f.read()
         return self.run_on_text(text, ifile, ofile)
 
-    def run_on_file_list(self, ifiles: List[str]) -> Prev_Procedure_Result:
+    def run_on_file_list(self, ifiles: List[str]) -> PrevProcedureResult:
         i = 1
         total = len(ifiles)
         for ifile in ifiles:
@@ -87,18 +105,5 @@ class Tokenize_Runner:
         logging.info("Done.")
         return True, None
 
-    def interact(self) -> Prev_Procedure_Result:
-        import readline
-
-        while True:
-            try:
-                text = input(">>> ")
-            except (KeyboardInterrupt, EOFError):
-                logging.warning("\npreV existing...")
-                break
-
-            if len(text) == 0:
-                logging.warning("Empty input!")
-            else:
-                self.run_on_text(text)
-        return True, None
+    def prepare_interact(self):
+        self.is_stdout = True
